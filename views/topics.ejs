@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votación de Temas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* === ESTILOS GENERALES === */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Gris muy suave de fondo */
+            color: #1f2937;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+            margin: 0;
+        }
+
+        /* Contenedor principal centrado */
+        .container {
+            width: 100%;
+            max-width: 600px; /* Que no se estire demasiado */
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); /* Sombra elegante */
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #111827;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        /* === TARJETA DEL TEMA (LI) === */
+        li {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            padding: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        /* Efecto al pasar el mouse por encima del tema */
+        li:hover {
+            transform: translateY(-2px); /* Se levanta un poquito */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-color: #d1d5db;
+        }
+
+        /* === VISTA LECTURA (Flexbox para alinear cosas) === */
+        .vista-lectura {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-tema {
+            flex-grow: 1; /* Ocupa todo el espacio posible */
+        }
+
+        .titulo-texto {
+            font-size: 1.1rem;
+            display: block;
+        }
+
+        /* Badge de votos */
+        .votos-badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        /* === BOTONES === */
+        .acciones {
+            display: flex;
+            gap: 5px;
+        }
+
+        button {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        /* Botón Votar */
+        .btn-votar {
+            background-color: #10b981; /* Verde */
+            color: white;
+        }
+        .btn-votar:hover { background-color: #059669; }
+
+        /* Botón Editar */
+        .btn-editar {
+            background-color: #3b82f6; /* Azul */
+            color: white;
+        }
+        .btn-editar:hover { background-color: #2563eb; }
+
+        /* Botón Eliminar */
+        .btn-eliminar {
+            background-color: #ef4444; /* Rojo */
+            color: white;
+        }
+        .btn-eliminar:hover { background-color: #dc2626; }
+
+        /* Botón Guardar / Agregar */
+        .btn-guardar, .form-agregar button {
+            background-color: #111827; /* Negro suave */
+            color: white;
+        }
+
+        .btn-cancelar {
+            background-color: #9ca3af;
+            color: white;
+        }
+
+        /* === FORMULARIOS === */
+        .form-editar {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            flex-grow: 1;
+        }
+
+        .form-agregar {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed #e5e7eb;
+        }
+
+        /* Clase utilitaria */
+        .oculto { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🗳️ Lista de temas</h1>
+
+    <ul id="lista-temas">
+        <% topics.forEach(topic => { %>
+            <li id="tema-<%= topic.id %>">
+                
+                <div class="vista-lectura">
+                    <div class="info-tema">
+                        <span class="titulo-texto"><%= topic.title %></span>
+                        <span class="votos-badge">⭐ <span class="votos-cnt"><%= topic.votes %></span> votos</span>
+                    </div>
+
+                    <div class="acciones">
+                        <button class="btn-votar" data-id="<%= topic.id %>">Votar</button>
+                        <button class="btn-editar">Editar</button>
+                        <button class="btn-eliminar" data-id="<%= topic.id %>">X</button>
+                    </div>
+                </div>
+
+                <form class="form-editar oculto" data-id="<%= topic.id %>">
+                    <input type="text" name="title" value="<%= topic.title %>" required>
+                    <button type="submit" class="btn-guardar">Guardar</button>
+                    <button type="button" class="btn-cancelar">Cancelar</button>
+                </form>
+
+            </li>
+        <% }) %>
+    </ul>
+
+    <h2>Agregar nuevo tema</h2>
+    <form action="/topics" method="POST" class="form-agregar">
+        <input type="text" name="title" required placeholder="Escribe un tema interesante...">
+        <button type="submit">Agregar</button>
+    </form>
+</div>
+
+<script>
+    const lista = document.getElementById('lista-temas');
+
+    function reordenarLista() {
+        const items = Array.from(lista.children);
+        items.sort((a, b) => {
+            const votosA = parseInt(a.querySelector('.votos-cnt').textContent);
+            const votosB = parseInt(b.querySelector('.votos-cnt').textContent);
+            return votosB - votosA;
+        });
+        items.forEach(item => lista.appendChild(item));
+    }
+
+    lista.addEventListener('click', function(e) {
+        const target = e.target;
+        const li = target.closest('li');
+        if (!li) return;
+
+        const id = li.id.replace('tema-', '');
+
+        // VOTAR
+        if (target.classList.contains('btn-votar')) {
+            // Efecto visual instantáneo para que se sienta rápido
+            target.textContent = "⌛"; 
+            
+            fetch(`/topics/${id}/vote`, { method: "POST" })
+                .then(res => res.json())
+                .then(data => {
+                    li.querySelector('.votos-cnt').textContent = data.votes;
+                    target.textContent = "Votar"; // Regresamos el texto
+                    reordenarLista();
+                })
+                .catch(err => console.error(err));
+        }
+
+        // ELIMINAR
+        if (target.classList.contains('btn-eliminar')) {
+            if(!confirm("¿Estás seguro de que deseas eliminar este tema definitivamente?")) return;
+            fetch(`/topics/${id}/delete`, { method: "POST" })
+                .then(res => res.json())
+                .then(data => li.remove());
+        }
+
+        // EDITAR
+        if (target.classList.contains('btn-editar')) {
+            li.querySelector('.vista-lectura').classList.add('oculto');
+            li.querySelector('.form-editar').classList.remove('oculto');
+            // Ponemos el foco en el input automáticamente
+            li.querySelector('input[name="title"]').focus(); 
+        }
+
+        // CANCELAR
+        if (target.classList.contains('btn-cancelar')) {
+            li.querySelector('.form-editar').classList.add('oculto');
+            li.querySelector('.vista-lectura').classList.remove('oculto');
+        }
+    });
+
+    // GUARDAR
+    lista.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('form-editar')) {
+            e.preventDefault();
+            const form = e.target;
+            const li = form.closest('li');
+            const id = form.dataset.id;
+            const nuevoTitulo = form.querySelector('input[name="title"]').value;
+
+            fetch(`/topics/${id}/update`, {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: nuevoTitulo })
+            })
+            .then(res => res.json())
+            .then(data => {
+                li.querySelector('.titulo-texto').textContent = data.title;
+                form.classList.add('oculto');
+                li.querySelector('.vista-lectura').classList.remove('oculto');
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
