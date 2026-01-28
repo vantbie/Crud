@@ -1,7 +1,15 @@
-const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("./topics.db");
+const { Sequelize } = require('sequelize'); //exportamos la clase sequelize
 
-db.serialize(() => {
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: './data.sqlite',
+  logging: false
+});
+
+module.exports = sequelize;
+
+/*db.serialize(() => {             
+  //inicia una accion
   db.run(`
     CREATE TABLE IF NOT EXISTS topics (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -11,4 +19,5 @@ db.serialize(() => {
   `);
 });
 
-module.exports = db;
+//exportamos
+module.exports = db; */
