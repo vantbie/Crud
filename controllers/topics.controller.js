@@ -1,88 +1,112 @@
-//array de prueba
-const db = require("../data/db"); 
+const Topic = require('../models/topic.model');
+
+//const db = require("../data/db"); 
 
 // Funcion para mostrar los temas
-function getAllTopics(req, res) {
-    db.all("SELECT * FROM topics ORDER BY votes DESC", [], (err, rows) => {
-        if (err) throw err;
-        res.render("topics", { topics: rows , editId: null });
-    });
+async function getAllTopics(req, res) {
+    try {
+        // "Topic, encuéntralos todos"
+        const topics = await Topic.findAll();
+        
+        // Enviamos los datos a la vista (EJS)
+        res.render('topics', { topics: topics });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error al obtener los temas");
+    }
 
-    //const sortedTopics = topics.sort((a,b) => b.votes - a.votes);
-    //res.render("topics", { topics: sortedTopics }); 
 }
 
 // Crear un nuevo topic
-function createTopic(req, res) {
-    const { title } = req.body;
-    db.run("INSERT INTO topics (title, votes) VALUES (?, 0)", [title], function(err) {
-        if (err) throw err;
-        res.redirect("/topics");
-    });
-    
-    /*const newTopic = {
-        id: topics.length + 1,
-        title,
-        votes: 0
+async function createTopic(req, res) {
+    try {
+        // Sacamos los datos del formulario
+        const { title } = req.body;
+
+        // "Topic, crea uno nuevo con estos datos"
+        await Topic.create({ title });
+
+        // Al terminar, recargamos la página principal
+        res.redirect('/topics');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error al crear el tema");
     }
-    topics.push(newTopic);
-    res.redirect("/topics");*/
+    
 }
 
 // votar un topic
-function voteTopic(req, res){
-    const id = parseInt(req.params.id);
-    db.run("UPDATE topics SET votes = votes + 1 WHERE id = ?", [id], function(err) {
-        if (err) {
-            return res.status(500).json({ error: "Error al votar" });
-        }
+async function voteTopic(req, res){
+    try {
+        const { id } = req.params;
 
-        db.get("SELECT votes FROM topics WHERE id = ?", [id], (err, row) => {
-            if (err) return res.status(500).json({ error: "Error al obtener votos" });
+        // Buscar el tema por su ID 
+        const topic = await Topic.findByPk(id);
 
-            res.json({ votes: row.votes});
-        });
-    });
-    
-    /*const topic = topics.find(t => t.id === id);
-    if(topic) {
-        topic.votes += 1;
+        if (!topic) return res.status(404).json({ error: "No encontrado" });
+
+        // Sumar voto y guardar
+        await topic.increment('votes'); 
+
+        // Recargamos para devolver el valor actualizado
+        await topic.reload();
+
+        res.json({ votes: topic.votes });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al votar" });
     }
-    res.redirect("/topics");*/
+    
 }
 
 // eliminar un topic
-function deleteTopic(req, res){
-    const id = parseInt(req.params.id);
-    db.run("DELETE FROM topics WHERE id = ?", [id], function(err) {
-        if (err) {
-            return res.status(500).json({ error: "Error al eliminar" });
-        }
-        res.json({ message: "Eliminado correctamente", id: id });
-    });
-    
-    //topics = topics.filter(t => t.id !== id);
-    //res.redirect("/topics");
+async function deleteTopic(req, res){
+    try {
+        const { id } = req.params;
+        await Topic.destroy({
+            where: { id: id }
+        });
+
+        res.json({ message: "Eliminado correctamente" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al eliminar" });
+    }
 }
 
-function editTopic(req, res){
-    const id = parseInt(req.params.id);
-    db.all("SELECT * FROM topics WHERE id = ?", [id], function(err, rows) {
-        if (err) throw err;
-        res.render("topics", { topics: rows, editId: id});
-    });
+// editar
+async function editTopic(req, res){
+    try {
+        const { id } = req.params;
+        
+        const topic = await Topic.findByPk(id);
+        
+        if (!topic) return res.redirect('/topics');
+
+        res.render('edit', { topic });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error al cargar formulario");
+    }
 }
 
-function updateTopic(req, res){
-    const id = parseInt(req.params.id);
-    const { title } = req.body;
-    db.run("UPDATE topics SET title = ? WHERE id = ?", [title, id], function(err) {
-        if (err) {
-            return res.status(500).json({ error: "Error al actualizar" });
-        }
-        // EN LUGAR DE REDIRECT, devolvemos el nuevo título para que JS lo pinte
-        res.json({ message: "Actualizado", title: title });
-    });
+//guardar
+async function updateTopic(req, res){
+    try {
+        const { id } = req.params;
+        const { title } = req.body;
+
+        // SQL: UPDATE Topics SET title=?, author=? WHERE id=?
+        await Topic.update(
+            { title: title },
+            { where: { id: id } } // A quién cambiar
+        );
+
+        res.json({ title: title, message: "Actualizado" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Error al actualizar");
+    }
 }
 
 
